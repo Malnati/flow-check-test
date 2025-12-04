@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate Branch Flow
-        uses: Malnati/flow-check@v2.1.0
+        uses: Malnati/flow-check@v2.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           custom_template: ".github/workflows/flow-check.md"
