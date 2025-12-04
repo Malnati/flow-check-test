@@ -29,3 +29,45 @@ jobs:
         with:
           name: compliance-report
           path: resultado-compliance.json
+jobs:
+  flow-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # 1. Gera o arquivo JSON no workspace
+      - name: Branch Flow Guard
+        id: flow
+        uses: Malnati/branch-flow-guard@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output_file: "flow-compliance.json" # <--- O arquivo é criado aqui
+
+      # 2. Ler o arquivo gerado para uma Output Variable
+      # Isso garante que actions subsequentes possam consumir o CONTEÚDO do arquivo
+      - name: Load Compliance Data
+        id: data
+        run: |
+          echo "Reading flow-compliance.json..."
+          # Truque do EOF para garantir que JSONs multilinha/complexos sejam lidos corretamente
+          {
+            echo "json_content<<EOF"
+            cat flow-compliance.json
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # 3. Consumir os dados e renderizar o template
+      - name: Post Flow Comment
+        uses: Malnati/pr-comment@v4.2.5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          
+          # Caminho do seu template Markdown (no repo)
+          template_path: .github/templates/pr-comment-branch-flow.md 
+          
+          # Injeta o CONTEÚDO do arquivo lido no passo anterior
+          variables: ${{ steps.data.outputs.json_content }}
+          
+          # Se o fluxo for bloqueante, você pode definir que o comentário deve recriar/atualizar
+          mode: "recreate"
