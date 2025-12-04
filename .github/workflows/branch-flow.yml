@@ -2,9 +2,7 @@
 name: branch-flow
 
 on:
-  pull_request:
-    branches:
-      - main
+  pull_request: {}
 
 permissions:
   contents: read
