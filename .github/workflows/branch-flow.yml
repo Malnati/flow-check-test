@@ -20,7 +20,7 @@ jobs:
       # 1. Análise
       - name: Guard
         id: flow
-        uses: Malnati/branch-flow-guard@v1.2.0
+        uses: Malnati/branch-flow-guard@v1.2.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           output_file: "flow-compliance.json"
