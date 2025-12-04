@@ -1,0 +1,16 @@
+# .github/workflows/flow-check.yml
+name: "Governance Check"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  flow-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Branch Flow
+        uses: Malnati/flow-check@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          custom_template: ".github/workflows/flow-check.md"
