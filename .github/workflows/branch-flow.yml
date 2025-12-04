@@ -39,7 +39,7 @@ jobs:
       # 3. Postar/Atualizar Comentário (Sticky)
       # Removemos o passo 'Delete Previous Comments' pois a v6 cuida disso
       - name: Post Comment
-        uses: Malnati/pr-comment@v6.0.0
+        uses: Malnati/pr-comment@v6.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
