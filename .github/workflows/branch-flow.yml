@@ -2,12 +2,15 @@
 name: branch-flow
 
 on:
-  pull_request: {}
+  pull_request:
+    # AQUI ESTÁ O GATILHO CORRETO PARA MUDANÇA DE BRANCH BASE
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
   pull-requests: write
-  issues: write # Necessário para apagar comentários antigos
+  # 'issues: write' não é mais necessário se não usamos mais o script de delete manual,
+  # mas pull-requests: write cobre comentários em PRs.
 
 jobs:
   flow-guard:
@@ -15,9 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # ----------------------------------------------------------------
-      # 1. Roda a validação e gera o JSON
-      # ----------------------------------------------------------------
+      # 1. Análise
       - name: Guard
         id: flow
         uses: Malnati/branch-flow-guard@v1.0.0
@@ -25,9 +26,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           output_file: "flow-compliance.json"
 
-      # ----------------------------------------------------------------
-      # 2. Lê o arquivo para Output (Carrega os dados)
-      # ----------------------------------------------------------------
+      # 2. Carregar Dados
       - name: Load Data
         id: data
         run: |
@@ -37,53 +36,22 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # ----------------------------------------------------------------
-      # CORREÇÃO 1: Limpar comentários anteriores do Bot
-      # Isso resolve o problema das mensagens duplicadas.
-      # ----------------------------------------------------------------
-      - name: Delete Previous Comments
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            
-            // Busca comentários existentes na PR
-            const { data: comments } = await github.rest.issues.listComments({
-              owner, repo, issue_number,
-            });
-
-            // Filtra comentários que têm o Título da nossa Action
-            const botComments = comments.filter(c => 
-              c.body.includes('🛡️ Branch Flow Guard') && 
-              c.user.type === 'Bot'
-            );
-
-            // Deleta os antigos
-            for (const comment of botComments) {
-              await github.rest.issues.deleteComment({
-                owner, repo, comment_id: comment.id,
-              });
-            }
-
-      # ----------------------------------------------------------------
-      # 3. Postar Novo Comentário 
-      # ----------------------------------------------------------------
+      # 3. Postar/Atualizar Comentário (Sticky)
+      # Removemos o passo 'Delete Previous Comments' pois a v6 cuida disso
       - name: Post Comment
-        uses: Malnati/pr-comment@v6.0.0
+        uses: Malnati/pr-comment@v6.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          # IMPORTANTE: Verifique se este arquivo existe no seu repo!
-          template_path: .github/workflows/branch-flow.md
-          message_id: "branch-flow-guard-v1"
+          template_path: .github/workflows/pr-comment-branch-flow.md
+          
+          # ID ÚNICO para garantir que sempre atualize a mesma mensagem
+          message_id: "branch-flow-guard-status"
           
           header_title: "🛡️ Branch Flow Guard"
           header_subject: "Validacao de Fluxo"
-          header_actor: "github-actions[bot]"
           
-          # Monta a tabela HTML
+          # Renderização da Tabela
           body_message: |
             <div align="center">
             
@@ -103,10 +71,7 @@ jobs:
              'Feche esta PR e alinhe as branches corretamente.' || 
              'Pode prosseguir com o Code Review.' }}
 
-      # ----------------------------------------------------------------
-      # CORREÇÃO 2: Bloquear a PR de verdade (Status Vermelho)
-      # Se não for permitido, força erro e impede o merge.
-      # ----------------------------------------------------------------
+      # 4. Bloqueio Hard
       - name: Block PR if Violation
         if: ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed }}
         run: |
