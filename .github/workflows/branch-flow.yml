@@ -3,7 +3,6 @@ name: branch-flow
 
 on:
   pull_request:
-    # AQUI ESTÁ O GATILHO CORRETO PARA MUDANÇA DE BRANCH BASE
     types: [opened, synchronize, reopened, edited]
 
 permissions:
@@ -21,7 +20,7 @@ jobs:
       # 1. Análise
       - name: Guard
         id: flow
-        uses: Malnati/branch-flow-guard@v1.0.0
+        uses: Malnati/branch-flow-guard@v1.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           output_file: "flow-compliance.json"
@@ -39,7 +38,7 @@ jobs:
       # 3. Postar/Atualizar Comentário (Sticky)
       # Removemos o passo 'Delete Previous Comments' pois a v6 cuida disso
       - name: Post Comment
-        uses: Malnati/pr-comment@v6.0.1
+        uses: Malnati/pr-comment@v6.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
