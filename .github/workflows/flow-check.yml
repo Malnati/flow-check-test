@@ -1,8 +1,9 @@
 name: "Governance Check"
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+    - nunca
 
 permissions:
   contents: read
