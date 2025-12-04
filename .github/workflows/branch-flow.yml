@@ -6,10 +6,10 @@ on:
     branches:
       - main
 
-# CORREÇÃO 1: Permissões explícitas para escrever na PR
 permissions:
-  contents: read        # Ler o código (checkout)
-  pull-requests: write  # Postar comentários
+  contents: read
+  pull-requests: write
+  issues: write # Necessário para apagar comentários antigos
 
 jobs:
   flow-guard:
@@ -17,7 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # 1. Roda a validação e gera o arquivo
+      # ----------------------------------------------------------------
+      # 1. Roda a validação e gera o JSON
+      # ----------------------------------------------------------------
       - name: Guard
         id: flow
         uses: Malnati/branch-flow-guard@v1.0.0
@@ -25,7 +27,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           output_file: "flow-compliance.json"
 
-      # 2. Lê o arquivo para Output
+      # ----------------------------------------------------------------
+      # 2. Lê o arquivo para Output (Carrega os dados)
+      # ----------------------------------------------------------------
       - name: Load Data
         id: data
         run: |
@@ -35,20 +39,52 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # 3. Postar Comentário
+      # ----------------------------------------------------------------
+      # CORREÇÃO 1: Limpar comentários anteriores do Bot
+      # Isso resolve o problema das mensagens duplicadas.
+      # ----------------------------------------------------------------
+      - name: Delete Previous Comments
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            
+            // Busca comentários existentes na PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number,
+            });
+
+            // Filtra comentários que têm o Título da nossa Action
+            const botComments = comments.filter(c => 
+              c.body.includes('🛡️ Branch Flow Guard') && 
+              c.user.type === 'Bot'
+            );
+
+            // Deleta os antigos
+            for (const comment of botComments) {
+              await github.rest.issues.deleteComment({
+                owner, repo, comment_id: comment.id,
+              });
+            }
+
+      # ----------------------------------------------------------------
+      # 3. Postar Novo Comentário (Agora será único)
+      # ----------------------------------------------------------------
       - name: Post Comment
         uses: Malnati/pr-comment@v4.2.5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          # Certifique-se que este caminho existe no seu repo após o checkout
+          # IMPORTANTE: Verifique se este arquivo existe no seu repo!
           template_path: .github/templates/pr-comment-branch-flow.md
           
           header_title: "🛡️ Branch Flow Guard"
           header_subject: "Validacao de Fluxo"
           header_actor: "github-actions[bot]"
           
-          # Montagem da tabela via expressão do GitHub Actions
+          # Monta a tabela HTML
           body_message: |
             <div align="center">
             
@@ -68,4 +104,12 @@ jobs:
              'Feche esta PR e alinhe as branches corretamente.' || 
              'Pode prosseguir com o Code Review.' }}
 
-             # acho que faltou algo aqui para substituir a mensagem em vez de criar novas
+      # ----------------------------------------------------------------
+      # CORREÇÃO 2: Bloquear a PR de verdade (Status Vermelho)
+      # Se não for permitido, força erro e impede o merge.
+      # ----------------------------------------------------------------
+      - name: Block PR if Violation
+        if: ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed }}
+        run: |
+          echo "::error title=Branch Flow Violation::O fluxo de branches está incorreto. Merge bloqueado."
+          exit 1
