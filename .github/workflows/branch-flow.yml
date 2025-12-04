@@ -71,12 +71,13 @@ jobs:
       # 3. Postar Novo Comentário 
       # ----------------------------------------------------------------
       - name: Post Comment
-        uses: Malnati/pr-comment@v5.0.1
+        uses: Malnati/pr-comment@v6.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
           # IMPORTANTE: Verifique se este arquivo existe no seu repo!
-          template_path: .github/workflows/pr-comment-branch-flow.md
+          template_path: .github/workflows/branch-flow.md
+          message_id: "branch-flow-guard-v1"
           
           header_title: "🛡️ Branch Flow Guard"
           header_subject: "Validacao de Fluxo"
