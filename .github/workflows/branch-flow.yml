@@ -4,8 +4,13 @@ name: branch-flow
 on:
   pull_request:
     branches:
-    - main
-    
+      - main
+
+# CORREÇÃO 1: Permissões explícitas para escrever na PR
+permissions:
+  contents: read        # Ler o código (checkout)
+  pull-requests: write  # Postar comentários
+
 jobs:
   flow-check:
     runs-on: ubuntu-latest
@@ -20,7 +25,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           output_file: "flow-compliance.json"
 
-      # 2. Lê o arquivo para Output (mesmo passo da conversa anterior)
+      # 2. Lê o arquivo para Output
       - name: Load Data
         id: data
         run: |
@@ -36,16 +41,14 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
+          # Certifique-se que este caminho existe no seu repo após o checkout
           template_path: .github/templates/pr-comment-branch-flow.md
-          
-          # --- AQUI ESTÁ O TRUQUE ---
-          # Nós construímos o conteúdo rico usando funções do GitHub Actions (format)
-          # e injetamos tudo dentro do input 'body_message'.
           
           header_title: "🛡️ Branch Flow Guard"
           header_subject: "Validacao de Fluxo"
           header_actor: "github-actions[bot]"
           
+          # Montagem da tabela via expressão do GitHub Actions
           body_message: |
             <div align="center">
             
@@ -55,7 +58,6 @@ jobs:
             
             </div>
           
-          # Mapeamos o código de violação para o rodapé se houver erro
           footer_result: >-
              ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
              format('⛔ Bloqueado (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
