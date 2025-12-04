@@ -54,11 +54,10 @@ jobs:
             
             </div>
           
-          # MUDANÇA 1: Usamos 'ui.guidance_md' que contém a lista de branches permitidas
           footer_result: >-
              ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
-             format('⛔ Bloqueado (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
-             '✅ Autorizado' }}
+             format('⛔ **Bloqueado** (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
+             '' }}
           
           footer_advise: ${{ fromJson(steps.data.outputs.json_content).ui.guidance_md }}
 
