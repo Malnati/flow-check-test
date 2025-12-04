@@ -38,7 +38,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          template_path: .github/workflows/pr-comment-branch-flow.md
+          template_path: .github/workflows/branch-flow.md
           message_id: "branch-flow-guard-status"
           
           header_title: "🛡️ Branch Flow Guard"
