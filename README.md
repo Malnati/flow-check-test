@@ -1,3 +1,3 @@
-<div align="center">
+<div align="right">
 
 # Testing 🛡️ Branch Flow Guard Pro
