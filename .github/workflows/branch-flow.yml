@@ -67,3 +67,5 @@ jobs:
              ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
              'Feche esta PR e alinhe as branches corretamente.' || 
              'Pode prosseguir com o Code Review.' }}
+
+             # acho que faltou algo aqui para substituir a mensagem em vez de criar novas
