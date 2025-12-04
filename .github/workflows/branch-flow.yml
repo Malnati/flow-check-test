@@ -78,7 +78,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
           # IMPORTANTE: Verifique se este arquivo existe no seu repo!
-          template_path: .github/templates/pr-comment-branch-flow.md
+          template_path: .github/workflows/pr-comment-branch-flow.md
           
           header_title: "🛡️ Branch Flow Guard"
           header_subject: "Validacao de Fluxo"
