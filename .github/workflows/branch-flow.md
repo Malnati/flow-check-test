@@ -3,11 +3,11 @@
 > [!NOTE]
 > **Fluxo de Referência (Governance):**
 >
-> 1. `✨ Feature/Fix` &rarr; 🛠️ **Development**
-> 2. 🛠️ **Development** &rarr; 🧪 **Staging**
-> 3. 🧪 **Staging** &rarr; 🚀 **Production**
+> 1. `✨ Feature/Fix` &rarr; 🛠️ **Development** _(dev, develop, development)_
+> 2. 🛠️ **Development** &rarr; 🧪 **Staging** _(staging, stage, homol, hm)_
+> 3. 🧪 **Staging** &rarr; 🚀 **Production** _(main, master, prod, production)_
 >
-> *Certifique-se de que esta PR respeita a ordem sequencial acima.*
+> *Siga estritamente a ordem sequencial acima.*
 
 ${BODY_MESSAGE}
 
