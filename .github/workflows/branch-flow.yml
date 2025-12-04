@@ -1,4 +1,3 @@
-# .github/workflows/branch-flow.yml
 name: branch-flow
 
 on:
@@ -8,8 +7,6 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  # 'issues: write' não é mais necessário se não usamos mais o script de delete manual,
-  # mas pull-requests: write cobre comentários em PRs.
 
 jobs:
   flow-guard:
@@ -17,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # 1. Análise
+      # 1. Análise (Gera o JSON com a Guidance inteligente)
       - name: Guard
         id: flow
         uses: Malnati/branch-flow-guard@v1.2.1
@@ -35,22 +32,19 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # 3. Postar/Atualizar Comentário (Sticky)
-      # Removemos o passo 'Delete Previous Comments' pois a v6 cuida disso
+      # 3. Postar Comentário
       - name: Post Comment
         uses: Malnati/pr-comment@v6.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
           template_path: .github/workflows/pr-comment-branch-flow.md
-          
-          # ID ÚNICO para garantir que sempre atualize a mesma mensagem
           message_id: "branch-flow-guard-status"
           
           header_title: "🛡️ Branch Flow Guard"
           header_subject: "Validacao de Fluxo"
+          header_actor: "github-actions[bot]"
           
-          # Renderização da Tabela
           body_message: |
             <div align="center">
             
@@ -60,19 +54,24 @@ jobs:
             
             </div>
           
+          # MUDANÇA 1: Usamos 'ui.guidance_md' que contém a lista de branches permitidas
           footer_result: >-
              ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
              format('⛔ Bloqueado (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
              '✅ Autorizado' }}
           
-          footer_advise: >-
-             ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
-             'Feche esta PR e alinhe as branches corretamente.' || 
-             'Pode prosseguir com o Code Review.' }}
+          footer_advise: ${{ fromJson(steps.data.outputs.json_content).ui.guidance_md }}
 
-      # 4. Bloqueio Hard
+      # 4. Bloqueio Hard (Com Log Rico)
       - name: Block PR if Violation
         if: ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed }}
         run: |
-          echo "::error title=Branch Flow Violation::O fluxo de branches está incorreto. Merge bloqueado."
+          # MUDANÇA 2: Pegamos a mensagem de orientação do JSON para exibir no log de erro
+          GUIDANCE="${{ fromJson(steps.data.outputs.json_content).ui.guidance_md }}"
+          
+          # Removemos formatação markdown (**) para ficar limpo no log do console
+          CLEAN_GUIDANCE=$(echo "$GUIDANCE" | sed 's/\*\*//g' | sed 's/`//g')
+          
+          echo "::error title=Branch Flow Violation::$CLEAN_GUIDANCE"
+          echo "::notice::Dica: Você pode ajustar as branches permitidas nos inputs do workflow."
           exit 1
