@@ -12,7 +12,7 @@ permissions:
   pull-requests: write  # Postar comentários
 
 jobs:
-  flow-check:
+  flow-guard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
