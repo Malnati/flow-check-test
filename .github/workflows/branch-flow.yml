@@ -38,7 +38,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
-          template_path: .github/workflows/pr-comment-branch-flow.md
+          template_path: .github/workflows/branch-flow.md
           message_id: "branch-flow-guard-status"
           
           header_title: "🛡️ Branch Flow Guard"
@@ -54,11 +54,10 @@ jobs:
             
             </div>
           
-          # MUDANÇA 1: Usamos 'ui.guidance_md' que contém a lista de branches permitidas
           footer_result: >-
              ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
-             format('⛔ Bloqueado (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
-             '✅ Autorizado' }}
+             format('⛔ **Bloqueado** (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
+             '' }}
           
           footer_advise: ${{ fromJson(steps.data.outputs.json_content).ui.guidance_md }}
 
