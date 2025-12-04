@@ -1,3 +1,10 @@
+name: branch-flow
+
+on:
+  pull_request:
+    branches:
+    - main
+    
 jobs:
   flow-check:
     runs-on: ubuntu-latest
