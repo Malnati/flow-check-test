@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ Branch Flow Guard
+# 🛡️ Branch Flow Guard Pro
 
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Branch%20Flow%20Guard-6f42c1?style=for-the-badge&logo=github)](https://github.com/marketplace/actions/branch-flow-guard)
 [![Version](https://img.shields.io/github/v/release/Malnati/flow-check?style=for-the-badge&color=purple)](https://github.com/Malnati/flow-check/releases)
