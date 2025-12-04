@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate Branch Flow
-        uses: Malnati/flow-check@v1.0.0
+        uses: Malnati/flow-check@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           custom_template: ".github/workflows/flow-check.md"
