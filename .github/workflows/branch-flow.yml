@@ -70,10 +70,10 @@ jobs:
             }
 
       # ----------------------------------------------------------------
-      # 3. Postar Novo Comentário (Agora será único)
+      # 3. Postar Novo Comentário 
       # ----------------------------------------------------------------
       - name: Post Comment
-        uses: Malnati/pr-comment@v5.0.0
+        uses: Malnati/pr-comment@v5.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
