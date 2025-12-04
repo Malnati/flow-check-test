@@ -1,73 +1,59 @@
-# .github/workflows/branch-flow.yml
-on:
-  pull_request: {}
-    
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      # 1. Executa a Action
-      - name: Guard
-        id: flow
-        uses: Malnati/branch-flow-guard@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Opcional: Define onde salvar o arquivo físico no workspace
-          output_file: "resultado-compliance.json"
-
-      # 2. Consome via Variável (JSON String)
-      - name: Debug Output Variable
-        run: |
-          echo "O status é: ${{ fromJson(steps.flow.outputs.result).compliance.allowed }}"
-          echo "A mensagem é: ${{ fromJson(steps.flow.outputs.result).ui.message_md }}"
-
-      # 3. OU Consome via Arquivo (já gerado no workspace)
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: compliance-report
-          path: resultado-compliance.json
 jobs:
   flow-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      # 1. Gera o arquivo JSON no workspace
-      - name: Branch Flow Guard
+      # 1. Roda a validação e gera o arquivo
+      - name: Guard
         id: flow
         uses: Malnati/branch-flow-guard@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          output_file: "flow-compliance.json" # <--- O arquivo é criado aqui
+          output_file: "flow-compliance.json"
 
-      # 2. Ler o arquivo gerado para uma Output Variable
-      # Isso garante que actions subsequentes possam consumir o CONTEÚDO do arquivo
-      - name: Load Compliance Data
+      # 2. Lê o arquivo para Output (mesmo passo da conversa anterior)
+      - name: Load Data
         id: data
         run: |
-          echo "Reading flow-compliance.json..."
-          # Truque do EOF para garantir que JSONs multilinha/complexos sejam lidos corretamente
           {
             echo "json_content<<EOF"
             cat flow-compliance.json
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # 3. Consumir os dados e renderizar o template
-      - name: Post Flow Comment
+      # 3. Postar Comentário
+      - name: Post Comment
         uses: Malnati/pr-comment@v4.2.5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
+          template_path: .github/templates/pr-comment-branch-flow.md
           
-          # Caminho do seu template Markdown (no repo)
-          template_path: .github/templates/pr-comment-branch-flow.md 
+          # --- AQUI ESTÁ O TRUQUE ---
+          # Nós construímos o conteúdo rico usando funções do GitHub Actions (format)
+          # e injetamos tudo dentro do input 'body_message'.
           
-          # Injeta o CONTEÚDO do arquivo lido no passo anterior
-          variables: ${{ steps.data.outputs.json_content }}
+          header_title: "🛡️ Branch Flow Guard"
+          header_subject: "Validacao de Fluxo"
+          header_actor: "github-actions[bot]"
           
-          # Se o fluxo for bloqueante, você pode definir que o comentário deve recriar/atualizar
-          mode: "recreate"
+          body_message: |
+            <div align="center">
+            
+            | 🚦 Status | 🛫 Origem | 🛬 Destino |
+            | :---: | :---: | :---: |
+            | **${{ fromJson(steps.data.outputs.json_content).ui.message_md }}** | `${{ fromJson(steps.data.outputs.json_content).context.head_branch }}` | `${{ fromJson(steps.data.outputs.json_content).context.base_branch }}` |
+            
+            </div>
+          
+          # Mapeamos o código de violação para o rodapé se houver erro
+          footer_result: >-
+             ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
+             format('⛔ Bloqueado (Código: {0})', fromJson(steps.data.outputs.json_content).compliance.violation_code) || 
+             '✅ Autorizado' }}
+          
+          footer_advise: >-
+             ${{ !fromJson(steps.data.outputs.json_content).compliance.allowed && 
+             'Feche esta PR e alinhe as branches corretamente.' || 
+             'Pode prosseguir com o Code Review.' }}
