@@ -1,0 +1,47 @@
+jobs:
+  flow-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # 1. Executa a Lógica (Gera JSON)
+      - name: Branch Flow Guard
+        id: flow
+        uses: Malnati/branch-flow-guard@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Inputs opcionais de configuração de branches aqui...
+
+      # 2. Baixa o Template Centralizado
+      - name: Fetch Governance Template
+        run: |
+          # Exemplo usando curl para pegar o arquivo raw de outro repo público ou com token
+          # Se o repo for privado, precisaria de um token extra no header
+          curl -sL https://raw.githubusercontent.com/Malnati/governance-assets/main/templates/branch-flow.md -o template.md
+
+      # 3. Prepara as variáveis e Comenta
+      # Aqui assumimos que o 'pr-comment' aceita o path do template E um mapa de variáveis
+      - name: Post Comment
+        uses: Malnati/pr-comment@v4.2.5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number }}
+          template_path: ./template.md
+          
+          # Mapeando o JSON do passo 1 para as variáveis do Template
+          # A action pr-comment precisará saber ler esses inputs extras ou um input 'variables'
+          variables: |
+            {
+              "head_branch": "${{ fromJson(steps.flow.outputs.result_json).context.head_branch }}",
+              "base_branch": "${{ fromJson(steps.flow.outputs.result_json).context.base_branch }}",
+              "head_type": "${{ fromJson(steps.flow.outputs.result_json).context.head_type }}",
+              "base_type": "${{ fromJson(steps.flow.outputs.result_json).context.base_type }}",
+              "message": "${{ fromJson(steps.flow.outputs.result_json).message }}",
+              "status_icon": "${{ fromJson(steps.flow.outputs.result_json).compliance.allowed && '✅' || '⛔' }}",
+              "violation_code": "${{ fromJson(steps.flow.outputs.result_json).compliance.violation_code }}"
+            }
+
+      # 4. Bloqueio Hard (Opcional, mas recomendado)
+      - name: Fail if Rejected
+        if: ${{ !fromJson(steps.flow.outputs.result_json).compliance.allowed }}
+        run: exit 1
